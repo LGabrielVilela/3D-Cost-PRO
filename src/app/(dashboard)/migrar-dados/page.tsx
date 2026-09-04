@@ -52,45 +52,48 @@ interface Summary {
  * coleção inteira no banco pelo conteúdo local).
  */
 export default function MigrarDadosPage() {
-  const [status, setStatus] = useState<"idle" | "running" | "done">("idle");
+  const [status, setStatus] = useState<"idle" | "running" | "done" | "error">("idle");
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function handleMigrate() {
     setStatus("running");
+    setError(null);
 
-    const materials = readLocal<Material>(STORAGE_KEYS.materials);
-    const printers = readLocal<Printer>(STORAGE_KEYS.printers);
-    const clients = readLocal<Client>(STORAGE_KEYS.clients);
-    const calculations = readLocal<Calculation>(STORAGE_KEYS.calculations);
-    const quotes = readLocal<Quote>(STORAGE_KEYS.quotes);
+    try {
+      const materials = readLocal<Material>(STORAGE_KEYS.materials);
+      const printers = readLocal<Printer>(STORAGE_KEYS.printers);
+      const clients = readLocal<Client>(STORAGE_KEYS.clients);
+      const calculations = readLocal<Calculation>(STORAGE_KEYS.calculations);
+      const quotes = readLocal<Quote>(STORAGE_KEYS.quotes);
 
-    let settingsMigrated = false;
-    const rawSettings = window.localStorage.getItem(STORAGE_KEYS.settings);
-    if (rawSettings) {
-      try {
+      let settingsMigrated = false;
+      const rawSettings = window.localStorage.getItem(STORAGE_KEYS.settings);
+      if (rawSettings) {
         const settings = JSON.parse(rawSettings) as AppSettings;
         await settingsRepository.save(settings);
         settingsMigrated = true;
-      } catch {
-        settingsMigrated = false;
       }
+
+      if (materials.length > 0) await materialsRepository.replaceAll(materials);
+      if (printers.length > 0) await printersRepository.replaceAll(printers);
+      if (clients.length > 0) await clientsRepository.replaceAll(clients);
+      if (calculations.length > 0) await calculationsRepository.replaceAll(calculations);
+      if (quotes.length > 0) await quotesRepository.replaceAll(quotes);
+
+      setSummary({
+        materials: materials.length,
+        printers: printers.length,
+        clients: clients.length,
+        calculations: calculations.length,
+        quotes: quotes.length,
+        settingsMigrated,
+      });
+      setStatus("done");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro desconhecido ao migrar.");
+      setStatus("error");
     }
-
-    if (materials.length > 0) await materialsRepository.replaceAll(materials);
-    if (printers.length > 0) await printersRepository.replaceAll(printers);
-    if (clients.length > 0) await clientsRepository.replaceAll(clients);
-    if (calculations.length > 0) await calculationsRepository.replaceAll(calculations);
-    if (quotes.length > 0) await quotesRepository.replaceAll(quotes);
-
-    setSummary({
-      materials: materials.length,
-      printers: printers.length,
-      clients: clients.length,
-      calculations: calculations.length,
-      quotes: quotes.length,
-      settingsMigrated,
-    });
-    setStatus("done");
   }
 
   return (
@@ -131,6 +134,13 @@ export default function MigrarDadosPage() {
                   <li>Configurações: {summary.settingsMigrated ? "migradas" : "nenhuma encontrada"}</li>
                 </ul>
               </div>
+            </div>
+          )}
+
+          {status === "error" && error && (
+            <div className="rounded-lg border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive">
+              <p className="font-medium">Falha ao migrar.</p>
+              <p>{error}</p>
             </div>
           )}
         </CardContent>

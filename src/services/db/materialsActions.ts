@@ -37,12 +37,15 @@ export async function remove(id: string): Promise<void> {
   await db.delete(materials).where(eq(materials.id, id));
 }
 
+/**
+ * O driver `neon-http` não suporta `db.transaction()` — delete/insert
+ * rodam como duas operações sequenciais, não atômicas. Aceitável aqui:
+ * `replaceAll` só é usado pela ferramenta de migração (uso único).
+ */
 export async function replaceAll(items: Material[]): Promise<void> {
   await requireSession();
-  await db.transaction(async (tx) => {
-    await tx.delete(materials);
-    if (items.length > 0) {
-      await tx.insert(materials).values(items);
-    }
-  });
+  await db.delete(materials);
+  if (items.length > 0) {
+    await db.insert(materials).values(items);
+  }
 }
