@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState } from "react";
 
 import type { BaseRepository } from "@/services/repositories/baseRepository";
-import { seedDemoDataIfNeeded } from "@/services/seed/demoData";
 import type { BaseEntity } from "@/types/entities";
 
 export interface EntityCollection<T extends BaseEntity> {
@@ -35,14 +34,12 @@ export function useEntityCollection<T extends BaseEntity>(
 
   useEffect(() => {
     let cancelled = false;
-    seedDemoDataIfNeeded()
-      .then(() => repository.list())
-      .then((list) => {
-        if (!cancelled) {
-          setItems(list);
-          setLoading(false);
-        }
-      });
+    repository.list().then((list) => {
+      if (!cancelled) {
+        setItems(list);
+        setLoading(false);
+      }
+    });
     return () => {
       cancelled = true;
     };

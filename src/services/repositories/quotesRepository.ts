@@ -1,5 +1,6 @@
 import { generateId } from "@/lib/id";
-import { LocalStorageAdapter, STORAGE_KEYS } from "@/services/storage/localStorageAdapter";
+import * as quotesActions from "@/services/db/quotesActions";
+import { ServerActionAdapter } from "@/services/storage/serverActionAdapter";
 import type { Quote } from "@/types/entities";
 import { BaseRepository } from "./baseRepository";
 
@@ -41,5 +42,5 @@ class QuotesRepository extends BaseRepository<Quote> {
 }
 
 export const quotesRepository = new QuotesRepository(
-  new LocalStorageAdapter<Quote>(STORAGE_KEYS.quotes),
+  new ServerActionAdapter<Quote>(quotesActions),
 );

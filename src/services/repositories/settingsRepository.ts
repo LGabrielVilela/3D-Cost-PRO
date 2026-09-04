@@ -1,4 +1,4 @@
-import { STORAGE_KEYS } from "@/services/storage/localStorageAdapter";
+import { getSettings, saveSettings } from "@/services/db/settingsActions";
 import type { AppSettings } from "@/types/entities";
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -41,36 +41,22 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 /**
  * Repositório de configurações — objeto único (não é uma coleção).
- * Mesma ideia de troca futura para Supabase: a interface pública
- * (`get`/`save`) não muda, só a implementação interna.
+ * Implementação por Server Actions (Postgres/Neon) — ver `services/db/settingsActions.ts`.
  */
 class SettingsRepository {
-  private isBrowser(): boolean {
-    return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
-  }
-
   async get(): Promise<AppSettings> {
-    if (!this.isBrowser()) return DEFAULT_SETTINGS;
-    try {
-      const raw = window.localStorage.getItem(STORAGE_KEYS.settings);
-      if (!raw) return DEFAULT_SETTINGS;
-      const parsed = JSON.parse(raw);
-      return {
-        empresa: { ...DEFAULT_SETTINGS.empresa, ...parsed.empresa },
-        precificacao: { ...DEFAULT_SETTINGS.precificacao, ...parsed.precificacao },
-        orcamento: { ...DEFAULT_SETTINGS.orcamento, ...parsed.orcamento },
-        branding: { ...DEFAULT_SETTINGS.branding, ...parsed.branding },
-      };
-    } catch {
-      return DEFAULT_SETTINGS;
-    }
+    const saved = await getSettings();
+    if (!saved) return DEFAULT_SETTINGS;
+    return {
+      empresa: { ...DEFAULT_SETTINGS.empresa, ...saved.empresa },
+      precificacao: { ...DEFAULT_SETTINGS.precificacao, ...saved.precificacao },
+      orcamento: { ...DEFAULT_SETTINGS.orcamento, ...saved.orcamento },
+      branding: { ...DEFAULT_SETTINGS.branding, ...saved.branding },
+    };
   }
 
   async save(settings: AppSettings): Promise<AppSettings> {
-    if (this.isBrowser()) {
-      window.localStorage.setItem(STORAGE_KEYS.settings, JSON.stringify(settings));
-    }
-    return settings;
+    return saveSettings(settings);
   }
 }
 

@@ -12,7 +12,6 @@ import {
 } from "@/lib/dashboardStats";
 import { calculationsRepository } from "@/services/repositories/calculationsRepository";
 import { quotesRepository } from "@/services/repositories/quotesRepository";
-import { seedDemoDataIfNeeded } from "@/services/seed/demoData";
 import type { Calculation, Quote } from "@/types/entities";
 
 interface DashboardData {
@@ -46,9 +45,8 @@ export function useDashboardData(): DashboardData {
   useEffect(() => {
     let cancelled = false;
 
-    seedDemoDataIfNeeded()
-      .then(() => Promise.all([quotesRepository.list(), calculationsRepository.list()]))
-      .then(([quotesResult, calculationsResult]) => {
+    Promise.all([quotesRepository.list(), calculationsRepository.list()]).then(
+      ([quotesResult, calculationsResult]) => {
         if (cancelled) return;
         setQuotes(quotesResult);
         setCalculations(calculationsResult);

@@ -1,7 +1,8 @@
-import { LocalStorageAdapter, STORAGE_KEYS } from "@/services/storage/localStorageAdapter";
+import * as calculationsActions from "@/services/db/calculationsActions";
+import { ServerActionAdapter } from "@/services/storage/serverActionAdapter";
 import type { Calculation } from "@/types/entities";
 import { BaseRepository } from "./baseRepository";
 
 export const calculationsRepository = new BaseRepository<Calculation>(
-  new LocalStorageAdapter<Calculation>(STORAGE_KEYS.calculations),
+  new ServerActionAdapter<Calculation>(calculationsActions),
 );

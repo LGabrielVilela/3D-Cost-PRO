@@ -1,4 +1,3 @@
-import { DemoDataBootstrap } from "@/components/layout/DemoDataBootstrap";
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { MobileTopbar } from "@/components/layout/MobileTopbar";
 import { Sidebar } from "@/components/layout/Sidebar";
@@ -6,7 +5,6 @@ import { Sidebar } from "@/components/layout/Sidebar";
 export default function DashboardGroupLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen bg-background">
-      <DemoDataBootstrap />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <MobileTopbar />

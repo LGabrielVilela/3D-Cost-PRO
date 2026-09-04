@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Box } from "lucide-react";
+import { Box, LogOut } from "lucide-react";
 
+import { logout } from "@/app/login/actions";
 import { NAV_ITEMS } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
@@ -56,6 +57,18 @@ export function Sidebar() {
           );
         })}
       </nav>
+
+      <div className="px-3 py-2">
+        <form action={logout}>
+          <button
+            type="submit"
+            className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-sidebar-foreground/75 transition-colors hover:bg-sidebar-accent/60 hover:text-sidebar-accent-foreground"
+          >
+            <LogOut className="h-[18px] w-[18px] shrink-0 text-sidebar-foreground/50" strokeWidth={2} />
+            Sair
+          </button>
+        </form>
+      </div>
 
       <div className="px-6 py-4 text-[11px] text-sidebar-foreground/45">
         v0.1 · Fase 1
