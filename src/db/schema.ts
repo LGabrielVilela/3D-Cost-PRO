@@ -8,6 +8,7 @@ import type {
   CompanySettings,
   DiscountType,
   MaterialType,
+  OrderStatus,
   PricingSettings,
   QuotePaymentOption,
   QuoteItem,
@@ -97,6 +98,21 @@ export const quotes = pgTable("quotes", {
   subtotalCentavos: integer("subtotal_centavos").notNull(),
   descontoCentavos: integer("desconto_centavos"),
   totalCentavos: integer("total_centavos").notNull(),
+  createdAt: text("created_at").notNull(),
+  updatedAt: text("updated_at").notNull(),
+});
+
+export const orders = pgTable("orders", {
+  id: text("id").primaryKey(),
+  titulo: text("titulo").notNull(),
+  clientId: text("client_id"),
+  descricao: text("descricao"),
+  valorCentavos: integer("valor_centavos").notNull(),
+  dataEntrega: text("data_entrega"),
+  status: text("status").$type<OrderStatus>().notNull(),
+  posicao: integer("posicao").notNull(),
+  finalizadoEm: text("finalizado_em"),
+  observacoes: text("observacoes"),
   createdAt: text("created_at").notNull(),
   updatedAt: text("updated_at").notNull(),
 });

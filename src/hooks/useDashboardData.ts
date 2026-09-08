@@ -11,8 +11,9 @@ import {
   type StatusSlice,
 } from "@/lib/dashboardStats";
 import { calculationsRepository } from "@/services/repositories/calculationsRepository";
+import { ordersRepository } from "@/services/repositories/ordersRepository";
 import { quotesRepository } from "@/services/repositories/quotesRepository";
-import type { Calculation, Quote } from "@/types/entities";
+import type { Calculation, Order, Quote } from "@/types/entities";
 
 interface DashboardData {
   loading: boolean;
@@ -21,6 +22,7 @@ interface DashboardData {
   statusDistribution: StatusSlice[];
   quotes: Quote[];
   calculations: Calculation[];
+  orders: Order[];
   reload: () => void;
 }
 
@@ -33,25 +35,32 @@ const EMPTY_STATS: DashboardStats = {
   pecasCalculadas: 0,
   custoMedioPorPecaCentavos: 0,
   margemMediaPercentual: 0,
+  faturamentoPedidosCentavos: 0,
+  pedidosFinalizados: 0,
 };
 
-/** Carrega orçamentos + cálculos do storage e deriva os dados do dashboard. */
+/** Carrega orçamentos + cálculos + pedidos do storage e deriva os dados do dashboard. */
 export function useDashboardData(): DashboardData {
   const [loading, setLoading] = useState(true);
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [calculations, setCalculations] = useState<Calculation[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
 
-    Promise.all([quotesRepository.list(), calculationsRepository.list()]).then(
-      ([quotesResult, calculationsResult]) => {
-        if (cancelled) return;
-        setQuotes(quotesResult);
-        setCalculations(calculationsResult);
-        setLoading(false);
-      });
+    Promise.all([
+      quotesRepository.list(),
+      calculationsRepository.list(),
+      ordersRepository.list(),
+    ]).then(([quotesResult, calculationsResult, ordersResult]) => {
+      if (cancelled) return;
+      setQuotes(quotesResult);
+      setCalculations(calculationsResult);
+      setOrders(ordersResult);
+      setLoading(false);
+    });
 
     return () => {
       cancelled = true;
@@ -60,11 +69,12 @@ export function useDashboardData(): DashboardData {
 
   return {
     loading,
-    stats: loading ? EMPTY_STATS : computeDashboardStats(quotes, calculations),
+    stats: loading ? EMPTY_STATS : computeDashboardStats(quotes, calculations, orders),
     weeklySeries: computeWeeklySeries(quotes),
     statusDistribution: computeStatusDistribution(quotes),
     quotes,
     calculations,
+    orders,
     reload: () => {
       setLoading(true);
       setReloadKey((k) => k + 1);
