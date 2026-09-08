@@ -11,7 +11,8 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { Plus } from "lucide-react";
-import { useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState, type PointerEvent as ReactPointerEvent } from "react";
 
 import { PageHeader } from "@/components/shared/PageHeader";
 import { ConfirmDeleteDialog } from "@/components/shared/ConfirmDeleteDialog";
@@ -51,8 +52,13 @@ class CardDragSensor extends PointerSensor {
 export function PedidosPage() {
   const { orders, loading, create, update, remove, applyBoardChange } = useOrders();
   const { clients } = useClients();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
-  const [dialogAberto, setDialogAberto] = useState(false);
+  // Atalho "Novo pedido" do Dashboard entra como /pedidos?novo=1 — abre o
+  // diálogo de criação já na primeira renderização (ver efeito abaixo, que
+  // só cuida de limpar a URL).
+  const [dialogAberto, setDialogAberto] = useState(() => searchParams.get("novo") === "1");
   const [pedidoEmEdicao, setPedidoEmEdicao] = useState<Order | undefined>(undefined);
   const [colunaParaNovo, setColunaParaNovo] = useState<OrderStatus>("agendado");
   const [pedidoParaExcluir, setPedidoParaExcluir] = useState<Order | undefined>(undefined);
@@ -85,6 +91,14 @@ export function PedidosPage() {
     setPedidoEmEdicao(order);
     setDialogAberto(true);
   }
+
+  // Limpa o `?novo=1` da URL depois de ler (evita reabrir o diálogo num refresh).
+  useEffect(() => {
+    if (searchParams.get("novo") === "1") {
+      router.replace("/pedidos");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
 
   async function salvar(values: Parameters<typeof formValuesToOrder>[0]) {
     const data = formValuesToOrder(values);

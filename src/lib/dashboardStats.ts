@@ -1,3 +1,4 @@
+import { todayIsoDate } from "@/lib/date";
 import type { Calculation, Order, Quote, QuoteStatus } from "@/types/entities";
 
 export interface DashboardStats {
@@ -12,6 +13,10 @@ export interface DashboardStats {
   /** Soma dos pedidos com status "finalizado" no Painel de Pedidos. */
   faturamentoPedidosCentavos: number;
   pedidosFinalizados: number;
+  pedidosAgendados: number;
+  pedidosEmAndamento: number;
+  /** Pedidos com `dataEntrega` no passado que ainda não foram finalizados. */
+  pedidosAtrasados: number;
 }
 
 export interface PeriodPoint {
@@ -93,7 +98,44 @@ export function computeDashboardStats(
     margemMediaPercentual,
     faturamentoPedidosCentavos,
     pedidosFinalizados: pedidosFinalizadosList.length,
+    pedidosAgendados: orders.filter((o) => o.status === "agendado").length,
+    pedidosEmAndamento: orders.filter((o) => o.status === "em_andamento").length,
+    pedidosAtrasados: computeOverdueOrders(orders).length,
   };
+}
+
+/** Pedidos não finalizados cuja `dataEntrega` já passou — ordenados do mais atrasado pro mais recente. */
+export function computeOverdueOrders(orders: Order[], hoje: string = todayIsoDate()): Order[] {
+  return orders
+    .filter((o) => o.status !== "finalizado" && o.dataEntrega && o.dataEntrega < hoje)
+    .sort((a, b) => (a.dataEntrega ?? "").localeCompare(b.dataEntrega ?? ""));
+}
+
+/** Agrupa pedidos finalizados em N baldes semanais (por `finalizadoEm`) para os gráficos. */
+export function computeOrdersWeeklySeries(orders: Order[], weeks = 6): PeriodPoint[] {
+  const now = new Date();
+  const buckets: PeriodPoint[] = [];
+  const finalizados = orders.filter((o) => o.status === "finalizado");
+
+  for (let i = weeks - 1; i >= 0; i--) {
+    const end = new Date(now);
+    end.setDate(now.getDate() - i * 7);
+    const start = new Date(end);
+    start.setDate(end.getDate() - 6);
+
+    const doPeriodo = finalizados.filter((o) => {
+      const finalizadoEm = new Date(o.finalizadoEm ?? o.updatedAt);
+      return finalizadoEm >= start && finalizadoEm <= end;
+    });
+
+    buckets.push({
+      label: `${String(start.getDate()).padStart(2, "0")}/${String(start.getMonth() + 1).padStart(2, "0")}`,
+      quantidade: doPeriodo.length,
+      valorCentavos: doPeriodo.reduce((acc, o) => acc + o.valorCentavos, 0),
+    });
+  }
+
+  return buckets;
 }
 
 /** Agrupa orçamentos em N baldes semanais (mais antigo -> mais recente) para os gráficos. */

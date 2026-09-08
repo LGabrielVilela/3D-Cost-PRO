@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 import {
   computeDashboardStats,
+  computeOrdersWeeklySeries,
   computeStatusDistribution,
   computeWeeklySeries,
   type DashboardStats,
@@ -19,6 +20,7 @@ interface DashboardData {
   loading: boolean;
   stats: DashboardStats;
   weeklySeries: PeriodPoint[];
+  ordersWeeklySeries: PeriodPoint[];
   statusDistribution: StatusSlice[];
   quotes: Quote[];
   calculations: Calculation[];
@@ -37,6 +39,9 @@ const EMPTY_STATS: DashboardStats = {
   margemMediaPercentual: 0,
   faturamentoPedidosCentavos: 0,
   pedidosFinalizados: 0,
+  pedidosAgendados: 0,
+  pedidosEmAndamento: 0,
+  pedidosAtrasados: 0,
 };
 
 /** Carrega orçamentos + cálculos + pedidos do storage e deriva os dados do dashboard. */
@@ -71,6 +76,7 @@ export function useDashboardData(): DashboardData {
     loading,
     stats: loading ? EMPTY_STATS : computeDashboardStats(quotes, calculations, orders),
     weeklySeries: computeWeeklySeries(quotes),
+    ordersWeeklySeries: computeOrdersWeeklySeries(orders),
     statusDistribution: computeStatusDistribution(quotes),
     quotes,
     calculations,
