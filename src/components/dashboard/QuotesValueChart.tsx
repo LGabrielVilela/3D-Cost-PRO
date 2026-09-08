@@ -8,9 +8,10 @@ import type { PeriodPoint } from "@/lib/dashboardStats";
 
 interface Props {
   data: PeriodPoint[];
+  title?: string;
 }
 
-export function QuotesValueChart({ data }: Props) {
+export function QuotesValueChart({ data, title = "Valor dos orçamentos" }: Props) {
   const chartData = data.map((point) => ({
     ...point,
     valorReais: centavosToReais(point.valorCentavos),
@@ -19,7 +20,7 @@ export function QuotesValueChart({ data }: Props) {
   return (
     <Card className="border-border/70 shadow-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">Valor dos orçamentos</CardTitle>
+        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
       </CardHeader>
       <CardContent className="h-64 pl-0">
         <ResponsiveContainer width="100%" height="100%">

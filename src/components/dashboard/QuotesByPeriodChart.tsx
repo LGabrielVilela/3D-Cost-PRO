@@ -7,13 +7,19 @@ import type { PeriodPoint } from "@/lib/dashboardStats";
 
 interface Props {
   data: PeriodPoint[];
+  title?: string;
+  quantityLabel?: string;
 }
 
-export function QuotesByPeriodChart({ data }: Props) {
+export function QuotesByPeriodChart({
+  data,
+  title = "Orçamentos por período",
+  quantityLabel = "Orçamentos",
+}: Props) {
   return (
     <Card className="border-border/70 shadow-sm">
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold">Orçamentos por período</CardTitle>
+        <CardTitle className="text-sm font-semibold">{title}</CardTitle>
       </CardHeader>
       <CardContent className="h-64 pl-0">
         <ResponsiveContainer width="100%" height="100%">
@@ -43,7 +49,7 @@ export function QuotesByPeriodChart({ data }: Props) {
                 fontSize: 12,
               }}
               labelStyle={{ color: "var(--foreground)", fontWeight: 600 }}
-              formatter={(value) => [`${value}`, "Orçamentos"]}
+              formatter={(value) => [`${value}`, quantityLabel]}
             />
             <Bar dataKey="quantidade" fill="var(--chart-1)" radius={[6, 6, 0, 0]} maxBarSize={36} />
           </BarChart>
