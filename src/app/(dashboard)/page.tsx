@@ -5,6 +5,7 @@ import {
   Clock,
   DollarSign,
   Layers,
+  PackageCheck,
   Percent,
   ReceiptText,
   TrendingUp,
@@ -86,6 +87,13 @@ export default function DashboardPage() {
             label="Margem média"
             value={formatPercentual(stats.margemMediaPercentual)}
             icon={Percent}
+          />
+          <StatCard
+            label="Faturamento de pedidos"
+            value={formatCentavos(stats.faturamentoPedidosCentavos)}
+            hint={`${stats.pedidosFinalizados} pedido(s) finalizado(s)`}
+            icon={PackageCheck}
+            tone="success"
           />
         </div>
       )}

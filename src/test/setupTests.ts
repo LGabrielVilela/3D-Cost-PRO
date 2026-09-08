@@ -36,6 +36,7 @@ vi.mock("@/services/db/printersActions", () => fakeCollectionActions(STORAGE_KEY
 vi.mock("@/services/db/clientsActions", () => fakeCollectionActions(STORAGE_KEYS.clients));
 vi.mock("@/services/db/calculationsActions", () => fakeCollectionActions(STORAGE_KEYS.calculations));
 vi.mock("@/services/db/quotesActions", () => fakeCollectionActions(STORAGE_KEYS.quotes));
+vi.mock("@/services/db/ordersActions", () => fakeCollectionActions(STORAGE_KEYS.orders));
 
 vi.mock("@/services/db/settingsActions", () => {
   function isBrowser() {

@@ -257,6 +257,32 @@ export interface Quote extends BaseEntity {
 }
 
 /** ------------------------------------------------------------------ */
+/** Painel de Pedidos                                                  */
+/** ------------------------------------------------------------------ */
+
+/**
+ * Fluxo fixo estilo kanban: agendado (a montar) -> em andamento -> finalizado.
+ * Ao entrar em "finalizado" o valor do pedido passa a contar no faturamento
+ * do Dashboard — ver `computeDashboardStats`.
+ */
+export type OrderStatus = "agendado" | "em_andamento" | "finalizado";
+
+export interface Order extends BaseEntity {
+  titulo: string;
+  clientId?: ID;
+  descricao?: string;
+  valorCentavos: number;
+  /** Data prevista de entrega/montagem (ISO date), opcional. */
+  dataEntrega?: string;
+  status: OrderStatus;
+  /** Posição dentro da coluna (arraste para reordenar) — menor vem primeiro. */
+  posicao: number;
+  /** Preenchido automaticamente quando o status vira "finalizado". */
+  finalizadoEm?: string;
+  observacoes?: string;
+}
+
+/** ------------------------------------------------------------------ */
 /** Configurações                                                      */
 /** ------------------------------------------------------------------ */
 

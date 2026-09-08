@@ -1,6 +1,7 @@
 import {
   Calculator,
   FileText,
+  KanbanSquare,
   LayoutDashboard,
   Package,
   Printer,
@@ -39,6 +40,12 @@ export const NAV_ITEMS: NavItem[] = [
     icon: FileText,
     primaryMobile: true,
     description: "Gerencie e envie orçamentos",
+  },
+  {
+    label: "Painel de Pedidos",
+    href: "/pedidos",
+    icon: KanbanSquare,
+    description: "Organize os pedidos a montar, em andamento e finalizados",
   },
   {
     label: "Clientes",

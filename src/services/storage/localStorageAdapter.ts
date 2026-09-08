@@ -75,6 +75,7 @@ export const STORAGE_KEYS = {
   clients: "3dcp:clients",
   calculations: "3dcp:calculations",
   quotes: "3dcp:quotes",
+  orders: "3dcp:orders",
   settings: "3dcp:settings",
   seedVersion: "3dcp:seed-version",
 } as const;

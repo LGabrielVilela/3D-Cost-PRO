@@ -1,4 +1,4 @@
-import type { Calculation, Quote, QuoteStatus } from "@/types/entities";
+import type { Calculation, Order, Quote, QuoteStatus } from "@/types/entities";
 
 export interface DashboardStats {
   totalOrcamentos: number;
@@ -9,6 +9,9 @@ export interface DashboardStats {
   pecasCalculadas: number;
   custoMedioPorPecaCentavos: number;
   margemMediaPercentual: number;
+  /** Soma dos pedidos com status "finalizado" no Painel de Pedidos. */
+  faturamentoPedidosCentavos: number;
+  pedidosFinalizados: number;
 }
 
 export interface PeriodPoint {
@@ -40,6 +43,7 @@ const STATUS_FORA_DO_PIPELINE: QuoteStatus[] = ["recusado", "cancelado", "expira
 export function computeDashboardStats(
   quotes: Quote[],
   calculations: Calculation[],
+  orders: Order[] = [],
 ): DashboardStats {
   const aprovados = quotes.filter((q) => q.status === "aprovado");
   const pendentes = quotes.filter((q) => STATUS_PENDENTE.includes(q.status));
@@ -72,6 +76,12 @@ export function computeDashboardStats(
   const margemMediaPercentual =
     margens.length === 0 ? 0 : margens.reduce((acc, m) => acc + m, 0) / margens.length;
 
+  const pedidosFinalizadosList = orders.filter((o) => o.status === "finalizado");
+  const faturamentoPedidosCentavos = pedidosFinalizadosList.reduce(
+    (acc, o) => acc + o.valorCentavos,
+    0,
+  );
+
   return {
     totalOrcamentos: quotes.length,
     orcamentosAprovados: aprovados.length,
@@ -81,6 +91,8 @@ export function computeDashboardStats(
     pecasCalculadas,
     custoMedioPorPecaCentavos,
     margemMediaPercentual,
+    faturamentoPedidosCentavos,
+    pedidosFinalizados: pedidosFinalizadosList.length,
   };
 }
 
