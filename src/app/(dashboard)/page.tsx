@@ -65,14 +65,14 @@ export default function DashboardPage() {
             icon={Layers}
           />
           <StatCard
-            label="Faturamento estimado"
+            label="Faturamento estimado (orçamentos)"
             value={formatCentavos(stats.faturamentoEstimadoCentavos)}
             hint="Orçamentos em andamento"
             icon={Wallet}
             tone="primary"
           />
           <StatCard
-            label="Faturamento aprovado"
+            label="Faturamento aprovado (orçamentos)"
             value={formatCentavos(stats.faturamentoAprovadoCentavos)}
             hint="Somente aprovados"
             icon={DollarSign}
@@ -89,7 +89,7 @@ export default function DashboardPage() {
             icon={Percent}
           />
           <StatCard
-            label="Faturamento de pedidos"
+            label="Faturamento de pedidos (finalizados)"
             value={formatCentavos(stats.faturamentoPedidosCentavos)}
             hint={`${stats.pedidosFinalizados} pedido(s) finalizado(s)`}
             icon={PackageCheck}
