@@ -9,7 +9,11 @@ import { StyleSheet } from "@react-pdf/renderer";
  */
 export const pdfStyles = StyleSheet.create({
   page: {
-    paddingTop: 110,
+    // +12pt em relação ao original: acompanha o nome da empresa maior
+    // (companyName passou de 13 para 20) — evita que o cabeçalho, quando
+    // tem CNPJ + telefone/WhatsApp + e-mail + nome fantasia, encoste no
+    // conteúdo da primeira página.
+    paddingTop: 122,
     paddingBottom: 70,
     paddingHorizontal: 40,
     fontSize: 9.5,
@@ -47,9 +51,9 @@ export const pdfStyles = StyleSheet.create({
     flexShrink: 1,
   },
   companyName: {
-    fontSize: 13,
+    fontSize: 20,
     fontFamily: "Helvetica-Bold",
-    marginBottom: 1,
+    marginBottom: 3,
   },
   companyFantasia: {
     fontSize: 8.5,

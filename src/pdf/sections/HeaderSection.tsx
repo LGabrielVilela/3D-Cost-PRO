@@ -27,7 +27,7 @@ export function HeaderSection({ data }: { data: QuotationPublicData }) {
             <Image src={empresa.logoDataUrl} style={pdfStyles.logo} />
           ) : null}
           <View style={pdfStyles.companyTextBlock}>
-            <Text style={[pdfStyles.companyName, { color: branding.corSecundaria }]}>
+            <Text style={[pdfStyles.companyName, { color: branding.corPrincipal }]}>
               {nomeDestaque}
             </Text>
             {nomeSecundario ? (
