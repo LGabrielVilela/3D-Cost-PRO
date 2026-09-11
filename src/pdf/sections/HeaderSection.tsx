@@ -8,6 +8,13 @@ import { pdfStyles } from "../styles";
 export function HeaderSection({ data }: { data: QuotationPublicData }) {
   const { empresa, branding } = data;
 
+  // "Nome da empresa" é o nome de destaque; se não estiver preenchido nas
+  // Configurações, usa o "Nome fantasia" nesse lugar (empresas informais só
+  // costumam preencher um dos dois) — nunca deixa o cabeçalho sem nome algum
+  // quando existe pelo menos um dos dois cadastrado.
+  const nomeDestaque = empresa.nome || empresa.nomeFantasia;
+  const nomeSecundario = empresa.nome && empresa.nomeFantasia ? empresa.nomeFantasia : undefined;
+
   const metaLinhas = [
     empresa.cnpj ? `CNPJ: ${empresa.cnpj}` : null,
     [empresa.telefone, empresa.whatsapp ? `WhatsApp: ${empresa.whatsapp}` : null]
@@ -26,10 +33,10 @@ export function HeaderSection({ data }: { data: QuotationPublicData }) {
           ) : null}
           <View style={pdfStyles.companyTextBlock}>
             <Text style={[pdfStyles.companyName, { color: branding.corSecundaria }]}>
-              {empresa.nome}
+              {nomeDestaque}
             </Text>
-            {empresa.nomeFantasia ? (
-              <Text style={pdfStyles.companyFantasia}>{empresa.nomeFantasia}</Text>
+            {nomeSecundario ? (
+              <Text style={pdfStyles.companyFantasia}>{nomeSecundario}</Text>
             ) : null}
             {metaLinhas.map((linha, index) => (
               <Text key={index} style={pdfStyles.companyMeta}>

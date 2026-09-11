@@ -3,6 +3,7 @@ import { PDFDocument } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 
 import { QuotePdfDocument } from "../QuotePdfDocument";
+import { extractPdfText } from "./extractPdfText";
 import { buildFixturePublicData } from "./fixtures";
 
 // PNG 1x1 transparente — suficiente para testar a renderização de imagem sem
@@ -99,6 +100,24 @@ describe("QuotePdfDocument", () => {
     expect(conteudo).not.toContain("custo do filamento");
     expect(conteudo).not.toContain("margem de lucro");
     expect(conteudo).not.toContain("markup");
+  });
+
+  it("mostra o nome da empresa no cabeçalho quando cadastrado nas Configurações", async () => {
+    const data = buildFixturePublicData();
+    const buffer = await renderToBuffer(<QuotePdfDocument data={data} />);
+    expect(extractPdfText(buffer)).toContain(data.empresa.nome);
+  });
+
+  it("usa o nome fantasia no lugar de destaque do cabeçalho quando 'Nome da empresa' não está preenchido", async () => {
+    const data = buildFixturePublicData({
+      empresa: { ...buildFixturePublicData().empresa, nome: "", nomeFantasia: "Meteora 3D" },
+    });
+    const buffer = await renderToBuffer(<QuotePdfDocument data={data} />);
+    const texto = extractPdfText(buffer);
+    expect(texto).toContain("Meteora 3D");
+    // No cabeçalho, o nome fantasia deve aparecer como destaque UMA vez, não repetido
+    // (destaque + subtítulo iguais) — o rodapé também mostra o nome fantasia, à parte.
+    expect(texto).not.toContain("Meteora 3DMeteora 3D");
   });
 
   it("mostra o bloco de assinatura apenas quando configurado", async () => {
