@@ -3,7 +3,7 @@ import type { CalculationCostBreakdown, CalculationInput } from "@/types/entitie
 
 import { calculateDepreciation } from "./depreciation";
 import { calculateEnergyCost } from "./energy";
-import { calculateFilamentCost } from "./filament";
+import { calculateMateriaisCost, getMateriaisUsados } from "./filament";
 import { calculateLabor } from "./labor";
 import { calculateLosses } from "./losses";
 import { calculateMaintenance } from "./maintenance";
@@ -17,11 +17,7 @@ import { calculatePackagingCost } from "./packaging";
  * embalagem → outros → custo total → custo por unidade.
  */
 export function calculateTotalCost(input: CalculationInput): CalculationCostBreakdown {
-  const filamento = calculateFilamentCost({
-    precoRoloCentavos: input.filamentoPrecoCentavos,
-    pesoRoloGramas: input.filamentoPesoRoloGramas,
-    gramasUtilizadas: input.gramasUtilizadas,
-  });
+  const filamento = calculateMateriaisCost(getMateriaisUsados(input));
 
   const energiaCentavos = calculateEnergyCost({
     consumoWatts: input.consumoWatts,
@@ -87,6 +83,7 @@ export function calculateTotalCost(input: CalculationInput): CalculationCostBrea
   const custoPorUnidadeCentavos = Math.round(custoTotalCentavos / quantidadePecas);
 
   return {
+    materiais: filamento.itens,
     filamentoCentavos: filamento.custoTotalCentavos,
     energiaCentavos,
     depreciacaoCentavos,

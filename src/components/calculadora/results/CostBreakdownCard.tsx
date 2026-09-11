@@ -8,7 +8,9 @@ interface Props {
   quantidadePecas: number;
 }
 
-const LINHAS: Array<{ key: keyof CalculationCostBreakdown; label: string }> = [
+type LinhaCentavos = Exclude<keyof CalculationCostBreakdown, "materiais">;
+
+const LINHAS: Array<{ key: LinhaCentavos; label: string }> = [
   { key: "filamentoCentavos", label: "Filamento" },
   { key: "energiaCentavos", label: "Energia" },
   { key: "depreciacaoCentavos", label: "Depreciação" },
@@ -29,9 +31,26 @@ export function CostBreakdownCard({ custos, quantidadePecas }: Props) {
       <CardContent className="space-y-2.5">
         <dl className="space-y-1.5 text-sm">
           {LINHAS.map((linha) => (
-            <div key={linha.key} className="flex items-center justify-between">
-              <dt className="text-muted-foreground">{linha.label}</dt>
-              <dd className="font-medium tabular-nums">{formatCentavos(custos[linha.key])}</dd>
+            <div key={linha.key}>
+              <div className="flex items-center justify-between">
+                <dt className="text-muted-foreground">{linha.label}</dt>
+                <dd className="font-medium tabular-nums">{formatCentavos(custos[linha.key])}</dd>
+              </div>
+              {linha.key === "filamentoCentavos" && custos.materiais.length > 1 ? (
+                <div className="mt-1 space-y-0.5 pl-3">
+                  {custos.materiais.map((material) => (
+                    <div
+                      key={material.id}
+                      className="flex items-center justify-between text-xs text-muted-foreground"
+                    >
+                      <span className="truncate">{material.materialNome || "Material"}</span>
+                      <span className="tabular-nums">
+                        {formatCentavos(material.custoTotalCentavos)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
             </div>
           ))}
         </dl>

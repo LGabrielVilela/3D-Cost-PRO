@@ -11,10 +11,15 @@ import type { CalculationInput } from "@/types/entities";
  */
 export function buildExampleInput(overrides: Partial<CalculationInput> = {}): CalculationInput {
   return {
-    materialNome: "PLA Basic",
-    filamentoPrecoCentavos: 9900,
-    filamentoPesoRoloGramas: 1000,
-    gramasUtilizadas: 100,
+    materiais: [
+      {
+        id: "m1",
+        materialNome: "PLA Basic",
+        filamentoPrecoCentavos: 9900,
+        filamentoPesoRoloGramas: 1000,
+        gramasUtilizadas: 100,
+      },
+    ],
     tempoImpressaoMinutos: 300, // 5 horas
     quantidadePecas: 1,
 

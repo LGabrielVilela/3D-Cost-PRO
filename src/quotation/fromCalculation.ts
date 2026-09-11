@@ -1,3 +1,4 @@
+import { getMateriaisUsados } from "@/calculators/filament";
 import { generateId } from "@/lib/id";
 import type { Calculation, QuoteItem } from "@/types/entities";
 
@@ -19,11 +20,15 @@ export function buildQuoteItemFromCalculation(
 ): QuoteItem {
   const quantidade = quantidadeOverride ?? calculation.input.quantidadePecas;
   const precoUnitarioCentavos = calculation.precos.precoAnuncioCentavos;
+  const materialNomes = getMateriaisUsados(calculation.input)
+    .map((material) => material.materialNome)
+    .filter(Boolean)
+    .join(" + ");
 
   return {
     id: generateId(),
-    descricao: calculation.nome || calculation.input.materialNome || "Peça personalizada",
-    material: calculation.input.materialNome || undefined,
+    descricao: calculation.nome || materialNomes || "Peça personalizada",
+    material: materialNomes || undefined,
     cor: undefined,
     quantidade,
     precoUnitarioCentavos,

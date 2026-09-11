@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { calculationsRepository } from "@/services/repositories/calculationsRepository";
 import { clientsRepository } from "@/services/repositories/clientsRepository";
+import { materialsRepository } from "@/services/repositories/materialsRepository";
 import { quotesRepository } from "@/services/repositories/quotesRepository";
 import { __resetSeedCacheForTests, SEED_VERSION } from "@/services/seed/demoData";
 import { STORAGE_KEYS } from "@/services/storage/localStorageAdapter";
@@ -33,10 +34,15 @@ function buildCalculation(overrides: Partial<Calculation> = {}): Calculation {
     updatedAt: "2026-09-01T00:00:00.000Z",
     nome: "Chaveiro personalizado",
     input: {
-      materialNome: "PLA",
-      filamentoPrecoCentavos: 9900,
-      filamentoPesoRoloGramas: 1000,
-      gramasUtilizadas: 100,
+      materiais: [
+        {
+          id: "m1",
+          materialNome: "PLA",
+          filamentoPrecoCentavos: 9900,
+          filamentoPesoRoloGramas: 1000,
+          gramasUtilizadas: 100,
+        },
+      ],
       tempoImpressaoMinutos: 300,
       quantidadePecas: 20,
       printerNome: "Bambu A1",
@@ -69,6 +75,17 @@ function buildCalculation(overrides: Partial<Calculation> = {}): Calculation {
       faixasQuantidade: [],
     },
     custos: {
+      materiais: [
+        {
+          id: "m1",
+          materialNome: "PLA",
+          filamentoPrecoCentavos: 9900,
+          filamentoPesoRoloGramas: 1000,
+          gramasUtilizadas: 100,
+          custoTotalCentavos: 990,
+          custoPorGramaReais: 0.099,
+        },
+      ],
       filamentoCentavos: 990,
       energiaCentavos: 80,
       depreciacaoCentavos: 137,
@@ -99,6 +116,10 @@ describe("QuoteFormPage", () => {
     pushMock.mockClear();
   });
 
+  // Timeout maior que o padrão (5s): o teste simula ~7 interações reais de
+  // usuário (digitação, seleção em combobox) e o padrão fica apertado quando
+  // a suíte inteira roda em paralelo (30 workers disputando CPU) — passa
+  // rápido isolado, mas estoura o padrão sob essa contenção.
   it("cria um orçamento do zero: seleciona cliente, preenche item e salva", async () => {
     await clientsRepository.create({
       nome: "Maria Silva",
@@ -131,7 +152,7 @@ describe("QuoteFormPage", () => {
     expect(quotes).toHaveLength(1);
     expect(quotes[0].itens[0].totalCentavos).toBe(29800); // 20 × R$14,90
     expect(quotes[0].clientId).toBeTruthy();
-  });
+  }, 15000);
 
   it("transfere item, quantidade e preço de anúncio automaticamente ao vir da calculadora", async () => {
     await clientsRepository.create({ nome: "João Pereira" });
@@ -145,4 +166,38 @@ describe("QuoteFormPage", () => {
     expect((screen.getByLabelText("Preço unitário") as HTMLInputElement).value).toBe("49,90");
     expect((screen.getByLabelText("Quantidade") as HTMLInputElement).value).toBe("20");
   });
+
+  it("permite selecionar mais de um material cadastrado no campo Material do item", async () => {
+    await materialsRepository.create({
+      nome: "PLA Branco",
+      tipo: "PLA",
+      marca: "",
+      cor: "",
+      precoCentavos: 9900,
+      pesoRoloGramas: 1000,
+      fornecedor: "",
+      observacoes: "",
+    });
+    await materialsRepository.create({
+      nome: "PLA Vermelho",
+      tipo: "PLA",
+      marca: "",
+      cor: "",
+      precoCentavos: 9900,
+      pesoRoloGramas: 1000,
+      fornecedor: "",
+      observacoes: "",
+    });
+
+    const user = userEvent.setup();
+    render(<QuoteFormPage />);
+
+    const materialInput = (await screen.findByLabelText("Material")) as HTMLInputElement;
+
+    await user.click(screen.getByRole("button", { name: "Cadastrados" }));
+    await user.click(await screen.findByRole("menuitemcheckbox", { name: "PLA Branco" }));
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "PLA Vermelho" }));
+
+    await waitFor(() => expect(materialInput.value).toBe("PLA Branco + PLA Vermelho"));
+  }, 15000);
 });

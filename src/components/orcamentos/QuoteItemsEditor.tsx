@@ -1,23 +1,51 @@
 "use client";
 
-import { Plus, Trash2 } from "lucide-react";
+import { Boxes, Plus, Trash2 } from "lucide-react";
 import { Controller, useFieldArray, useFormContext, useWatch } from "react-hook-form";
 
 import { CurrencyInput } from "@/components/calculadora/fields/CurrencyInput";
 import { SuffixNumberInput } from "@/components/calculadora/fields/SuffixNumberInput";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useMaterials } from "@/hooks/useMaterials";
 import { generateId } from "@/lib/id";
 import { formatCentavos, reaisToCentavos } from "@/lib/money";
 import { calculateItemTotal } from "@/quotation/quotationCalculator";
 
 import type { QuoteFormValues } from "./schema";
 
+/** Nomes de materiais atualmente descritos no campo de texto (separados por " + "). */
+function parseMateriais(material: string): string[] {
+  return material
+    .split("+")
+    .map((nome) => nome.trim())
+    .filter(Boolean);
+}
+
+/** Alterna um material cadastrado no texto livre do campo "Material" do item. */
+function toggleMaterial(materialAtual: string, nomeMaterial: string): string {
+  const selecionados = parseMateriais(materialAtual);
+  const jaSelecionado = selecionados.includes(nomeMaterial);
+  const proximos = jaSelecionado
+    ? selecionados.filter((nome) => nome !== nomeMaterial)
+    : [...selecionados, nomeMaterial];
+  return proximos.join(" + ");
+}
+
 /** Editor de itens do orçamento (produto/serviço) — um ou vários, com total calculado ao vivo. */
 export function QuoteItemsEditor() {
-  const { control, register, formState } = useFormContext<QuoteFormValues>();
+  const { control, register, setValue, formState } = useFormContext<QuoteFormValues>();
   const { fields, append, remove } = useFieldArray({ control, name: "itens" });
+  const { materials } = useMaterials();
   const itens = useWatch({ control, name: "itens" });
   const errosItens = formState.errors.itens;
   const erroGeral = errosItens && !Array.isArray(errosItens) ? errosItens.message : undefined;
@@ -70,12 +98,56 @@ export function QuoteItemsEditor() {
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor={`${idPrefix}-material`}>Material</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor={`${idPrefix}-material`}>Material</Label>
+                  {materials.length > 0 ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 gap-1 px-1.5 text-xs text-muted-foreground"
+                        >
+                          <Boxes className="h-3.5 w-3.5" />
+                          Cadastrados
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Materiais cadastrados</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {materials.map((material) => {
+                          const materialAtual = item?.material ?? "";
+                          const selecionado = parseMateriais(materialAtual).includes(material.nome);
+                          return (
+                            <DropdownMenuCheckboxItem
+                              key={material.id}
+                              checked={selecionado}
+                              onSelect={(event) => event.preventDefault()}
+                              onCheckedChange={() =>
+                                setValue(
+                                  `itens.${index}.material`,
+                                  toggleMaterial(materialAtual, material.nome),
+                                  { shouldValidate: true, shouldDirty: true },
+                                )
+                              }
+                            >
+                              {material.nome}
+                            </DropdownMenuCheckboxItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  ) : null}
+                </div>
                 <Input
                   id={`${idPrefix}-material`}
                   placeholder="Ex: PLA"
                   {...register(`itens.${index}.material` as const)}
                 />
+                <p className="text-xs text-muted-foreground">
+                  Selecione mais de um material cadastrado para peças com várias cores/filamentos.
+                </p>
               </div>
 
               <div className="space-y-1.5">

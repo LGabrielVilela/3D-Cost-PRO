@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { calculateFilamentCost } from "../filament";
+import { calculateFilamentCost, calculateMateriaisCost, getMateriaisUsados } from "../filament";
+import { buildExampleInput } from "./fixtures";
 
 describe("calculateFilamentCost", () => {
   it("calcula o custo do filamento pelo exemplo da especificação", () => {
@@ -51,5 +52,56 @@ describe("calculateFilamentCost", () => {
     });
     // 3300 * 333 / 1000 = 1098.9 -> arredonda para 1099
     expect(result.custoTotalCentavos).toBe(1099);
+  });
+});
+
+describe("calculateMateriaisCost", () => {
+  it("soma o custo de mais de um material (ex: peça com duas cores)", () => {
+    const result = calculateMateriaisCost([
+      { id: "1", materialNome: "PLA Branco", filamentoPrecoCentavos: 9900, filamentoPesoRoloGramas: 1000, gramasUtilizadas: 100 },
+      { id: "2", materialNome: "PLA Vermelho", filamentoPrecoCentavos: 12000, filamentoPesoRoloGramas: 1000, gramasUtilizadas: 50 },
+    ]);
+
+    expect(result.itens).toHaveLength(2);
+    expect(result.itens[0].custoTotalCentavos).toBe(990); // R$9,90
+    expect(result.itens[1].custoTotalCentavos).toBe(600); // R$6,00
+    expect(result.custoTotalCentavos).toBe(1590); // R$15,90
+  });
+
+  it("lista vazia resulta em custo zero", () => {
+    const result = calculateMateriaisCost([]);
+    expect(result.itens).toHaveLength(0);
+    expect(result.custoTotalCentavos).toBe(0);
+  });
+});
+
+describe("getMateriaisUsados", () => {
+  it("retorna o array `materiais` quando o cálculo já está no formato atual", () => {
+    const input = buildExampleInput();
+    const materiais = getMateriaisUsados(input);
+    expect(materiais).toBe(input.materiais);
+  });
+
+  it("converte um `CalculationInput` no formato antigo (campos soltos) em um array de 1 material", () => {
+    const inputAntigo = {
+      ...buildExampleInput(),
+      materiais: undefined,
+      materialId: "mat-antigo",
+      materialNome: "PLA Legado",
+      filamentoPrecoCentavos: 5000,
+      filamentoPesoRoloGramas: 1000,
+      gramasUtilizadas: 80,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+
+    const materiais = getMateriaisUsados(inputAntigo);
+    expect(materiais).toHaveLength(1);
+    expect(materiais[0]).toMatchObject({
+      materialId: "mat-antigo",
+      materialNome: "PLA Legado",
+      filamentoPrecoCentavos: 5000,
+      filamentoPesoRoloGramas: 1000,
+      gramasUtilizadas: 80,
+    });
   });
 });

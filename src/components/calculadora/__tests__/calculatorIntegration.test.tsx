@@ -22,12 +22,16 @@ function FormDebug() {
   const values = watch();
   return (
     <dl>
-      <dt>materialNome</dt>
-      <dd data-testid="materialNome">{values.materialNome}</dd>
-      <dt>filamentoPreco</dt>
-      <dd data-testid="filamentoPreco">{values.filamentoPreco}</dd>
-      <dt>filamentoPesoRolo</dt>
-      <dd data-testid="filamentoPesoRolo">{values.filamentoPesoRolo}</dd>
+      {values.materiais?.map((material, index) => (
+        <div key={material.id ?? index}>
+          <dt>materialNome-{index}</dt>
+          <dd data-testid={`materialNome-${index}`}>{material.materialNome}</dd>
+          <dt>filamentoPreco-{index}</dt>
+          <dd data-testid={`filamentoPreco-${index}`}>{material.filamentoPreco}</dd>
+          <dt>filamentoPesoRolo-{index}</dt>
+          <dd data-testid={`filamentoPesoRolo-${index}`}>{material.filamentoPesoRolo}</dd>
+        </div>
+      ))}
       <dt>printerNome</dt>
       <dd data-testid="printerNome">{values.printerNome}</dd>
       <dt>consumoWatts</dt>
@@ -85,9 +89,50 @@ describe("Integração calculadora ↔ cadastros", () => {
     await user.click(await screen.findByRole("combobox", { name: "Material cadastrado" }));
     await user.click(await screen.findByRole("option", { name: /PLA Integração/ }));
 
-    expect(screen.getByTestId("materialNome")).toHaveTextContent("PLA Integração");
-    expect(screen.getByTestId("filamentoPreco")).toHaveTextContent("123,45");
-    expect(screen.getByTestId("filamentoPesoRolo")).toHaveTextContent("750");
+    expect(screen.getByTestId("materialNome-0")).toHaveTextContent("PLA Integração");
+    expect(screen.getByTestId("filamentoPreco-0")).toHaveTextContent("123,45");
+    expect(screen.getByTestId("filamentoPesoRolo-0")).toHaveTextContent("750");
+  });
+
+  it("permite adicionar um segundo material e selecioná-lo independente do primeiro", async () => {
+    await materialsRepository.create({
+      nome: "PLA Branco",
+      tipo: "PLA",
+      marca: "",
+      cor: "",
+      precoCentavos: 10000,
+      pesoRoloGramas: 1000,
+      fornecedor: "",
+      observacoes: "",
+    });
+    await materialsRepository.create({
+      nome: "PLA Vermelho",
+      tipo: "PLA",
+      marca: "",
+      cor: "",
+      precoCentavos: 12000,
+      pesoRoloGramas: 1000,
+      fornecedor: "",
+      observacoes: "",
+    });
+
+    const user = userEvent.setup();
+    render(<StepMaterialHarness />);
+
+    const combos = await screen.findAllByRole("combobox", { name: "Material cadastrado" });
+    await user.click(combos[0]);
+    await user.click(await screen.findByRole("option", { name: /PLA Branco/ }));
+
+    await user.click(screen.getByRole("button", { name: "Adicionar material" }));
+
+    const combosAposAdicionar = screen.getAllByRole("combobox", { name: "Material cadastrado" });
+    expect(combosAposAdicionar).toHaveLength(2);
+    await user.click(combosAposAdicionar[1]);
+    await user.click(await screen.findByRole("option", { name: /PLA Vermelho/ }));
+
+    expect(screen.getByTestId("materialNome-0")).toHaveTextContent("PLA Branco");
+    expect(screen.getByTestId("materialNome-1")).toHaveTextContent("PLA Vermelho");
+    expect(screen.getByTestId("filamentoPreco-1")).toHaveTextContent("120,00");
   });
 
   it("selecionar uma impressora cadastrada preenche consumo, preço e vida útil automaticamente", async () => {
@@ -136,6 +181,6 @@ describe("Integração calculadora ↔ cadastros", () => {
     await user.click(await screen.findByRole("option", { name: /PLA Sincronizado/ }));
 
     // R$150,00 — o preço atualizado, não o original de R$100,00.
-    expect(screen.getByTestId("filamentoPreco")).toHaveTextContent("150,00");
+    expect(screen.getByTestId("filamentoPreco-0")).toHaveTextContent("150,00");
   });
 });

@@ -105,9 +105,13 @@ export function CalculatorPage() {
   async function salvarCalculo() {
     if (!result) return undefined;
     const formValues = methods.getValues();
+    const nomeMateriais = formValues.materiais
+      .map((material) => material.materialNome)
+      .filter(Boolean)
+      .join(" + ");
     return calculationsRepository.create({
-      nome: formValues.materialNome
-        ? `${formValues.materialNome} — ${new Date().toLocaleDateString("pt-BR")}`
+      nome: nomeMateriais
+        ? `${nomeMateriais} — ${new Date().toLocaleDateString("pt-BR")}`
         : `Cálculo — ${new Date().toLocaleDateString("pt-BR")}`,
       input: toCalculationInput(formValues),
       custos: result.custos,

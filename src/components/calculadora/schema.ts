@@ -1,5 +1,6 @@
 import { z } from "zod";
 
+import { getMateriaisUsados } from "@/calculators/filament";
 import { generateId } from "@/lib/id";
 import { centavosToReais, reaisToCentavos } from "@/lib/money";
 import { DEFAULT_QUANTITY_TIERS } from "@/calculators/quantityPricing";
@@ -23,6 +24,19 @@ const positiveMoneyString = (mensagem: string) =>
     .string()
     .min(1, mensagem)
     .refine((v) => reaisToCentavos(v) > 0, mensagem);
+
+export const materialUsageSchema = z.object({
+  id: z.string(),
+  materialId: z.string().optional(),
+  materialNome: z.string().min(1, "Informe o material utilizado"),
+  filamentoPreco: positiveMoneyString("Informe quanto você pagou no rolo"),
+  filamentoPesoRolo: z
+    .number({ error: "Informe o peso do rolo" })
+    .positive("O peso do rolo deve ser maior que zero"),
+  gramasUtilizadas: z
+    .number({ error: "Informe quantos gramas foram utilizados" })
+    .positive("A quantidade utilizada deve ser maior que zero"),
+});
 
 export const outroCustoItemSchema = z.object({
   id: z.string(),
@@ -49,15 +63,7 @@ export const quantityTierSchema = z.object({
 
 export const calculatorFormSchema = z
   .object({
-    materialId: z.string().optional(),
-    materialNome: z.string().min(1, "Informe o material utilizado"),
-    filamentoPreco: positiveMoneyString("Informe quanto você pagou no rolo"),
-    filamentoPesoRolo: z
-      .number({ error: "Informe o peso do rolo" })
-      .positive("O peso do rolo deve ser maior que zero"),
-    gramasUtilizadas: z
-      .number({ error: "Informe quantos gramas foram utilizados" })
-      .positive("A quantidade utilizada deve ser maior que zero"),
+    materiais: z.array(materialUsageSchema).min(1, "Adicione ao menos um material"),
     tempoImpressaoMinutos: z
       .number({ error: "Informe o tempo de impressão" })
       .positive("O tempo de impressão deve ser maior que zero"),
@@ -132,11 +138,16 @@ export type CalculatorFormValues = z.infer<typeof calculatorFormSchema>;
 /** Valores padrão de um cálculo novo — usados quando a calculadora abre em branco. */
 export function buildDefaultFormValues(): CalculatorFormValues {
   return {
-    materialId: undefined,
-    materialNome: "",
-    filamentoPreco: "",
-    filamentoPesoRolo: 1000,
-    gramasUtilizadas: 0,
+    materiais: [
+      {
+        id: generateId(),
+        materialId: undefined,
+        materialNome: "",
+        filamentoPreco: "",
+        filamentoPesoRolo: 1000,
+        gramasUtilizadas: 0,
+      },
+    ],
     tempoImpressaoMinutos: 0,
     quantidadePecas: 1,
 
@@ -186,11 +197,14 @@ export function buildDefaultFormValues(): CalculatorFormValues {
 /** Converte os valores do formulário (reais em string) para o `CalculationInput` (centavos). */
 export function toCalculationInput(values: CalculatorFormValues): CalculationInput {
   return {
-    materialId: values.materialId,
-    materialNome: values.materialNome,
-    filamentoPrecoCentavos: reaisToCentavos(values.filamentoPreco),
-    filamentoPesoRoloGramas: values.filamentoPesoRolo,
-    gramasUtilizadas: values.gramasUtilizadas,
+    materiais: values.materiais.map((material) => ({
+      id: material.id,
+      materialId: material.materialId,
+      materialNome: material.materialNome,
+      filamentoPrecoCentavos: reaisToCentavos(material.filamentoPreco),
+      filamentoPesoRoloGramas: material.filamentoPesoRolo,
+      gramasUtilizadas: material.gramasUtilizadas,
+    })),
     tempoImpressaoMinutos: values.tempoImpressaoMinutos,
     quantidadePecas: values.quantidadePecas,
 
@@ -254,11 +268,14 @@ export function fromCalculationInput(input: CalculationInput): CalculatorFormVal
     });
 
   return {
-    materialId: input.materialId,
-    materialNome: input.materialNome,
-    filamentoPreco: centavosParaTexto(input.filamentoPrecoCentavos),
-    filamentoPesoRolo: input.filamentoPesoRoloGramas,
-    gramasUtilizadas: input.gramasUtilizadas,
+    materiais: getMateriaisUsados(input).map((material) => ({
+      id: material.id,
+      materialId: material.materialId,
+      materialNome: material.materialNome,
+      filamentoPreco: centavosParaTexto(material.filamentoPrecoCentavos),
+      filamentoPesoRolo: material.filamentoPesoRoloGramas,
+      gramasUtilizadas: material.gramasUtilizadas,
+    })),
     tempoImpressaoMinutos: input.tempoImpressaoMinutos,
     quantidadePecas: input.quantidadePecas,
 

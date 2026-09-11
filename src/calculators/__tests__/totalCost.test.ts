@@ -50,4 +50,17 @@ describe("calculateTotalCost", () => {
     const custos = calculateTotalCost(input);
     expect(custos.depreciacaoCentavos).toBe(0);
   });
+
+  it("soma o filamento de mais de um material selecionado (peça com duas cores)", () => {
+    const input = buildExampleInput({
+      materiais: [
+        { id: "1", materialNome: "PLA Branco", filamentoPrecoCentavos: 9900, filamentoPesoRoloGramas: 1000, gramasUtilizadas: 100 },
+        { id: "2", materialNome: "PLA Vermelho", filamentoPrecoCentavos: 9900, filamentoPesoRoloGramas: 1000, gramasUtilizadas: 50 },
+      ],
+    });
+    const custos = calculateTotalCost(input);
+
+    expect(custos.materiais).toHaveLength(2);
+    expect(custos.filamentoCentavos).toBe(1485); // R$9,90 + R$4,95
+  });
 });

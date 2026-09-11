@@ -11,10 +11,15 @@ function buildCalculation(overrides: Partial<Calculation> = {}): Calculation {
     updatedAt: "2026-09-01T00:00:00.000Z",
     nome: "Chaveiro personalizado",
     input: {
-      materialNome: "PLA",
-      filamentoPrecoCentavos: 9900,
-      filamentoPesoRoloGramas: 1000,
-      gramasUtilizadas: 100,
+      materiais: [
+        {
+          id: "m1",
+          materialNome: "PLA",
+          filamentoPrecoCentavos: 9900,
+          filamentoPesoRoloGramas: 1000,
+          gramasUtilizadas: 100,
+        },
+      ],
       tempoImpressaoMinutos: 300,
       quantidadePecas: 20,
       printerNome: "Bambu A1",
@@ -47,6 +52,17 @@ function buildCalculation(overrides: Partial<Calculation> = {}): Calculation {
       faixasQuantidade: [],
     },
     custos: {
+      materiais: [
+        {
+          id: "m1",
+          materialNome: "PLA",
+          filamentoPrecoCentavos: 9900,
+          filamentoPesoRoloGramas: 1000,
+          gramasUtilizadas: 100,
+          custoTotalCentavos: 990,
+          custoPorGramaReais: 0.099,
+        },
+      ],
       filamentoCentavos: 990,
       energiaCentavos: 80,
       depreciacaoCentavos: 137,
@@ -102,6 +118,36 @@ describe("buildQuoteItemFromCalculation", () => {
     const serializado = JSON.stringify(item).toLowerCase();
     expect(serializado).not.toContain("3262"); // custoTotalCentavos
     expect(serializado).not.toContain("custo");
+  });
+
+  it("junta os nomes de mais de um material selecionado no campo `material`", () => {
+    const calculation = buildCalculation({
+      input: {
+        ...buildCalculation().input,
+        materiais: [
+          { id: "1", materialNome: "PLA Branco", filamentoPrecoCentavos: 9900, filamentoPesoRoloGramas: 1000, gramasUtilizadas: 100 },
+          { id: "2", materialNome: "PLA Vermelho", filamentoPrecoCentavos: 9900, filamentoPesoRoloGramas: 1000, gramasUtilizadas: 50 },
+        ],
+      },
+    });
+    const item = buildQuoteItemFromCalculation(calculation);
+    expect(item.material).toBe("PLA Branco + PLA Vermelho");
+  });
+
+  it("aceita um cálculo salvo no formato antigo (sem o array `materiais`)", () => {
+    const calculation = buildCalculation({
+      input: {
+        ...buildCalculation().input,
+        materiais: undefined,
+        materialNome: "PLA Legado",
+        filamentoPrecoCentavos: 5000,
+        filamentoPesoRoloGramas: 1000,
+        gramasUtilizadas: 80,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } as any,
+    });
+    const item = buildQuoteItemFromCalculation(calculation);
+    expect(item.material).toBe("PLA Legado");
   });
 });
 

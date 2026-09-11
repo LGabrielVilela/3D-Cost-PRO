@@ -104,13 +104,19 @@ export interface QuantityTier {
 /** Passo de arredondamento comercial (múltiplo de reais usado como base do "R$ X0,90"). */
 export type CommercialRoundingStep = 1 | 5 | 10 | 50 | 100;
 
-export interface CalculationInput {
-  // Etapa 1 — impressão
+/** Um material/filamento usado na impressão (peça pode combinar mais de um, ex: duas cores). */
+export interface CalculationMaterialUsage {
+  id: ID;
   materialId?: ID;
   materialNome: string;
   filamentoPrecoCentavos: number;
   filamentoPesoRoloGramas: number;
   gramasUtilizadas: number;
+}
+
+export interface CalculationInput {
+  // Etapa 1 — impressão
+  materiais: CalculationMaterialUsage[];
   tempoImpressaoMinutos: number;
   quantidadePecas: number;
 
@@ -168,7 +174,16 @@ export interface CalculationInput {
   faixasQuantidade: QuantityTier[];
 }
 
+/** Custo do filamento de UM material, já calculado (parte do breakdown detalhado). */
+export interface CalculationMaterialUsageCost extends CalculationMaterialUsage {
+  custoTotalCentavos: number;
+  /** Preço por grama em reais, com alta precisão — apenas para exibição. */
+  custoPorGramaReais: number;
+}
+
 export interface CalculationCostBreakdown {
+  /** Detalhamento do custo de filamento por material (soma para `filamentoCentavos`). */
+  materiais: CalculationMaterialUsageCost[];
   filamentoCentavos: number;
   energiaCentavos: number;
   depreciacaoCentavos: number;

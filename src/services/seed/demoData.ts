@@ -238,10 +238,15 @@ async function seedCalculations(): Promise<Calculation[]> {
   const exemplo: Omit<Calculation, "id" | "createdAt" | "updatedAt"> = {
     nome: "Miniatura decorativa (exemplo)",
     input: {
-      materialNome: "PLA Basic",
-      filamentoPrecoCentavos: reaisToCentavos(99),
-      filamentoPesoRoloGramas: 1000,
-      gramasUtilizadas: 100,
+      materiais: [
+        {
+          id: "seed-material-1",
+          materialNome: "PLA Basic",
+          filamentoPrecoCentavos: reaisToCentavos(99),
+          filamentoPesoRoloGramas: 1000,
+          gramasUtilizadas: 100,
+        },
+      ],
       tempoImpressaoMinutos: 300,
       quantidadePecas: 1,
       printerNome: "Bambu A1",
@@ -274,6 +279,17 @@ async function seedCalculations(): Promise<Calculation[]> {
       faixasQuantidade: [],
     },
     custos: {
+      materiais: [
+        {
+          id: "seed-material-1",
+          materialNome: "PLA Basic",
+          filamentoPrecoCentavos: reaisToCentavos(99),
+          filamentoPesoRoloGramas: 1000,
+          gramasUtilizadas: 100,
+          custoTotalCentavos: reaisToCentavos(9.9),
+          custoPorGramaReais: 0.099,
+        },
+      ],
       filamentoCentavos: reaisToCentavos(9.9),
       energiaCentavos: reaisToCentavos(0.8),
       depreciacaoCentavos: reaisToCentavos(2.5),
