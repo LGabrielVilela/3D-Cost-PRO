@@ -102,10 +102,15 @@ describe("QuotePdfDocument", () => {
     expect(conteudo).not.toContain("markup");
   });
 
-  it("mostra o nome da empresa no cabeçalho quando cadastrado nas Configurações", async () => {
+  it("mostra o nome fantasia em destaque no cabeçalho, antes do nome da empresa (razão social)", async () => {
     const data = buildFixturePublicData();
     const buffer = await renderToBuffer(<QuotePdfDocument data={data} />);
-    expect(extractPdfText(buffer)).toContain(data.empresa.nome);
+    const texto = extractPdfText(buffer);
+    expect(texto).toContain(data.empresa.nomeFantasia);
+    expect(texto).toContain(data.empresa.nome);
+    // O nome fantasia é a marca que o cliente reconhece — some fica em destaque (fonte
+    // grande, primeira linha), antes da razão social (menor, como subtítulo).
+    expect(texto.indexOf(data.empresa.nomeFantasia!)).toBeLessThan(texto.indexOf(data.empresa.nome));
   });
 
   it("usa o nome fantasia no lugar de destaque do cabeçalho quando 'Nome da empresa' não está preenchido", async () => {

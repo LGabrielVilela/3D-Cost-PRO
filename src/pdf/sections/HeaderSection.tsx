@@ -2,18 +2,13 @@ import { Image, Text, View } from "@react-pdf/renderer";
 
 import type { QuotationPublicData } from "@/quotation/types";
 
+import { resolveCompanyDisplayName } from "../resolveCompanyDisplayName";
 import { pdfStyles } from "../styles";
 
 /** Cabeçalho fixo — logo/dados da empresa à esquerda, identificação do orçamento à direita. */
 export function HeaderSection({ data }: { data: QuotationPublicData }) {
   const { empresa, branding } = data;
-
-  // "Nome da empresa" é o nome de destaque; se não estiver preenchido nas
-  // Configurações, usa o "Nome fantasia" nesse lugar (empresas informais só
-  // costumam preencher um dos dois) — nunca deixa o cabeçalho sem nome algum
-  // quando existe pelo menos um dos dois cadastrado.
-  const nomeDestaque = empresa.nome || empresa.nomeFantasia;
-  const nomeSecundario = empresa.nome && empresa.nomeFantasia ? empresa.nomeFantasia : undefined;
+  const { destaque: nomeDestaque, secundario: nomeSecundario } = resolveCompanyDisplayName(empresa);
 
   const metaLinhas = [
     empresa.cnpj ? `CNPJ: ${empresa.cnpj}` : null,

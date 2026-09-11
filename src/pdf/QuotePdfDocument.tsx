@@ -11,6 +11,7 @@ import { ItemsTable } from "./sections/ItemsTable";
 import { ObservationsSection } from "./sections/ObservationsSection";
 import { ProductSection } from "./sections/ProductSection";
 import { SignatureSection } from "./sections/SignatureSection";
+import { resolveCompanyDisplayName } from "./resolveCompanyDisplayName";
 import { pdfStyles } from "./styles";
 
 interface QuotePdfDocumentProps {
@@ -28,7 +29,10 @@ interface QuotePdfDocumentProps {
  */
 export function QuotePdfDocument({ data }: QuotePdfDocumentProps) {
   return (
-    <Document title={`Orçamento ${data.numeroFormatado}`} author={data.empresa.nome}>
+    <Document
+      title={`Orçamento ${data.numeroFormatado}`}
+      author={resolveCompanyDisplayName(data.empresa).destaque}
+    >
       <Page size="A4" style={pdfStyles.page} wrap>
         <HeaderSection data={data} />
 
