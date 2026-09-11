@@ -21,7 +21,7 @@ import { downloadQuotePdf } from "@/pdf/downloadQuotePdf";
 import { buildQuotationPublicData } from "@/quotation/buildQuotationPublicData";
 import { quotesRepository } from "@/services/repositories/quotesRepository";
 import type { Calculation, Quote } from "@/types/entities";
-import { buildQuoteDraftFromCalculation } from "@/quotation/fromCalculation";
+import { buildQuoteDraftFromCalculation, buildQuoteItemFromCalculation } from "@/quotation/fromCalculation";
 
 import { ClientPickerField } from "./ClientPickerField";
 import { QuoteDiscountEditor } from "./QuoteDiscountEditor";
@@ -43,8 +43,29 @@ const QuotePdfPreview = dynamic(
 interface QuoteFormPageProps {
   /** Presente ao editar um orçamento existente. */
   quote?: Quote;
-  /** Presente ao criar um orçamento a partir de um cálculo salvo (?calculoId=...). */
+  /**
+   * Presente ao vir de um cálculo salvo (?calculoId=...) — da Calculadora.
+   * Sem `quote`: vira o item único de um orçamento novo. Com `quote`: vira
+   * um item A MAIS, adicionado ao final dos itens já existentes no orçamento
+   * (uso: "Adicionar a orçamento" na Calculadora, para ir empilhando vários
+   * produtos calculados no mesmo orçamento).
+   */
   initialCalculation?: Calculation;
+}
+
+/** Converte o item vindo de um cálculo para o formato do formulário de itens do orçamento. */
+function calculationItemToFormValues(calculation: Calculation) {
+  const item = buildQuoteItemFromCalculation(calculation);
+  return {
+    id: item.id,
+    descricao: item.descricao,
+    material: item.material ?? "",
+    cor: item.cor ?? "",
+    quantidade: item.quantidade,
+    precoUnitario: (item.precoUnitarioCentavos / 100).toLocaleString("pt-BR", {
+      minimumFractionDigits: 2,
+    }),
+  };
 }
 
 /** Formulário completo de orçamento — usado tanto para criar quanto para editar. */
@@ -65,32 +86,33 @@ export function QuoteFormPage({ quote, initialCalculation }: QuoteFormPageProps)
     }
   }, [isEditing]);
 
-  const calculationDraft = initialCalculation
-    ? buildQuoteDraftFromCalculation(initialCalculation)
-    : undefined;
+  /** Monta os valores iniciais do formulário para os 3 pontos de entrada possíveis. */
+  function buildInitialFormValues(): QuoteFormValues {
+    if (quote) {
+      const base = quoteToFormValues(quote);
+      // Veio da Calculadora com "Adicionar a orçamento": o item novo entra
+      // no FINAL dos itens já existentes — nada do que já estava é perdido.
+      if (!initialCalculation) return base;
+      return { ...base, itens: [...base.itens, calculationItemToFormValues(initialCalculation)] };
+    }
+
+    if (initialCalculation) {
+      const calculationDraft = buildQuoteDraftFromCalculation(initialCalculation);
+      return buildDefaultQuoteFormValues({
+        clientId: "",
+        descricaoServico: calculationDraft.descricaoServico,
+        itens: [calculationItemToFormValues(initialCalculation)],
+      });
+    }
+
+    return buildDefaultQuoteFormValues({
+      itens: [{ id: generateId(), descricao: "", material: "", cor: "", quantidade: 1, precoUnitario: "0,00" }],
+    });
+  }
 
   const methods = useForm<QuoteFormValues>({
     resolver: zodResolver(quoteFormSchema),
-    defaultValues: quote
-      ? quoteToFormValues(quote)
-      : buildDefaultQuoteFormValues(
-          calculationDraft
-            ? {
-                clientId: "",
-                descricaoServico: calculationDraft.descricaoServico,
-                itens: calculationDraft.itens.map((item) => ({
-                  id: item.id,
-                  descricao: item.descricao,
-                  material: item.material ?? "",
-                  cor: item.cor ?? "",
-                  quantidade: item.quantidade,
-                  precoUnitario: (item.precoUnitarioCentavos / 100).toLocaleString("pt-BR", {
-                    minimumFractionDigits: 2,
-                  }),
-                })),
-              }
-            : { itens: [{ id: generateId(), descricao: "", material: "", cor: "", quantidade: 1, precoUnitario: "0,00" }] },
-        ),
+    defaultValues: buildInitialFormValues(),
     mode: "onBlur",
   });
 
@@ -170,7 +192,7 @@ export function QuoteFormPage({ quote, initialCalculation }: QuoteFormPageProps)
         <PageHeader
           title={isEditing ? `Editar orçamento #${String(quote!.numero).padStart(6, "0")}` : "Novo orçamento"}
           description={
-            initialCalculation
+            initialCalculation && !isEditing
               ? "Dados carregados automaticamente do cálculo — complete cliente, prazo e pagamento."
               : "Preencha os dados do cliente, do produto e das condições comerciais."
           }
@@ -180,7 +202,9 @@ export function QuoteFormPage({ quote, initialCalculation }: QuoteFormPageProps)
           <div className="flex items-start gap-2.5 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2.5 text-sm text-primary">
             <Calculator className="mt-0.5 h-4 w-4 shrink-0" />
             <span>
-              Item, quantidade e preço de anúncio foram transferidos automaticamente da calculadora.
+              {isEditing
+                ? "Um novo item foi adicionado a este orçamento a partir do cálculo mais recente — revise e salve para confirmar."
+                : "Item, quantidade e preço de anúncio foram transferidos automaticamente da calculadora."}
             </span>
           </div>
         ) : null}

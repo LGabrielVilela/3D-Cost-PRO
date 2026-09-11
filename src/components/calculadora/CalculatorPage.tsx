@@ -1,7 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Calculator, Check, FileText, Save } from "lucide-react";
+import { Calculator, Check, FileText, ListPlus, Save } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
@@ -15,8 +15,17 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { EmptyState } from "@/components/shared/EmptyState";
+import { useClients } from "@/hooks/useClients";
+import { useQuotes } from "@/hooks/useQuotes";
 import { calculationsRepository } from "@/services/repositories/calculationsRepository";
 import { formatCentavos } from "@/lib/money";
 
@@ -77,6 +86,14 @@ export function CalculatorPage() {
   const [hasCalculated, setHasCalculated] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [criandoOrcamento, setCriandoOrcamento] = useState(false);
+  const [seletorOrcamentoAberto, setSeletorOrcamentoAberto] = useState(false);
+  const [adicionandoAoOrcamentoId, setAdicionandoAoOrcamentoId] = useState<string | null>(null);
+
+  const { quotes } = useQuotes();
+  const { clients } = useClients();
+  const orcamentosRascunho = quotes
+    .filter((quote) => quote.status === "rascunho")
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 
   const values = useWatch({ control: methods.control });
 
@@ -139,6 +156,24 @@ export function CalculatorPage() {
     setCriandoOrcamento(false);
     if (calculo) {
       router.push(`/orcamentos/novo?calculoId=${calculo.id}`);
+    }
+  }
+
+  /** Abre o seletor de orçamentos em rascunho, para empilhar mais um produto calculado num orçamento já existente. */
+  async function handleAbrirSeletorDeOrcamento() {
+    const valid = await methods.trigger();
+    if (!valid || !result) return;
+    setSeletorOrcamentoAberto(true);
+  }
+
+  /** Salva o cálculo atual e leva pro orçamento escolhido, como um item a mais (nada do que já existia se perde). */
+  async function handleAdicionarAoOrcamento(quoteId: string) {
+    setAdicionandoAoOrcamentoId(quoteId);
+    const calculo = await salvarCalculo();
+    setAdicionandoAoOrcamentoId(null);
+    setSeletorOrcamentoAberto(false);
+    if (calculo) {
+      router.push(`/orcamentos/${quoteId}/editar?calculoId=${calculo.id}`);
     }
   }
 
@@ -205,6 +240,12 @@ export function CalculatorPage() {
                   {criandoOrcamento ? "Criando orçamento..." : "Criar orçamento"}
                 </Button>
               ) : null}
+              {hasCalculated ? (
+                <Button type="button" size="lg" variant="outline" onClick={handleAbrirSeletorDeOrcamento}>
+                  <ListPlus className="h-4 w-4" />
+                  Adicionar a orçamento
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -264,6 +305,17 @@ export function CalculatorPage() {
                 <FileText className="h-4 w-4" />
               </Button>
             ) : null}
+            {hasCalculated ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleAbrirSeletorDeOrcamento}
+                aria-label="Adicionar a orçamento"
+              >
+                <ListPlus className="h-4 w-4" />
+              </Button>
+            ) : null}
             <Button type="button" size="sm" onClick={handleCalcular}>
               <Calculator className="h-4 w-4" />
               {hasCalculated ? "Recalcular" : "Calcular"}
@@ -271,6 +323,51 @@ export function CalculatorPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={seletorOrcamentoAberto} onOpenChange={setSeletorOrcamentoAberto}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Adicionar a um orçamento</DialogTitle>
+            <DialogDescription>
+              Escolha um orçamento em rascunho para receber este produto como um novo item — o que
+              já estava nele não se perde.
+            </DialogDescription>
+          </DialogHeader>
+
+          {orcamentosRascunho.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              Nenhum orçamento em rascunho no momento. Use &ldquo;Criar orçamento&rdquo; para
+              começar um novo com este produto.
+            </p>
+          ) : (
+            <div className="max-h-80 space-y-1.5 overflow-y-auto">
+              {orcamentosRascunho.map((quote) => {
+                const cliente = quote.clientId ? clients.find((c) => c.id === quote.clientId) : undefined;
+                const adicionando = adicionandoAoOrcamentoId === quote.id;
+                return (
+                  <button
+                    key={quote.id}
+                    type="button"
+                    disabled={adicionandoAoOrcamentoId !== null}
+                    onClick={() => handleAdicionarAoOrcamento(quote.id)}
+                    className="flex w-full items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm transition-colors hover:bg-muted disabled:opacity-50"
+                  >
+                    <span className="min-w-0 truncate">
+                      <span className="font-medium tabular-nums">
+                        #{String(quote.numero).padStart(6, "0")}
+                      </span>
+                      {cliente ? ` — ${cliente.nome}` : ""}
+                    </span>
+                    <span className="shrink-0 tabular-nums text-muted-foreground">
+                      {adicionando ? "Adicionando..." : formatCentavos(quote.totalCentavos)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </FormProvider>
   );
 }

@@ -200,4 +200,54 @@ describe("QuoteFormPage", () => {
 
     await waitFor(() => expect(materialInput.value).toBe("PLA Branco + PLA Vermelho"));
   }, 15000);
+
+  it("acrescenta um item vindo da calculadora a um orçamento já existente, sem perder os itens que já tinha", async () => {
+    const client = await clientsRepository.create({ nome: "Ana Souza" });
+    const orcamentoExistente = await quotesRepository.create({
+      numero: 1,
+      clientId: client.id,
+      descricaoServico: "Kit de chaveiros",
+      itens: [
+        {
+          id: "item-existente",
+          descricao: "Chaveiro coração",
+          material: "PLA",
+          cor: "Rosa",
+          quantidade: 5,
+          precoUnitarioCentavos: 1000,
+          totalCentavos: 5000,
+        },
+      ],
+      prazoEntrega: "7 dias",
+      dataOrcamento: "2026-09-01",
+      validadeData: "2026-09-08",
+      formasPagamento: [],
+      descontoPercentual: 0,
+      descontoTipo: "percentual",
+      observacoes: "",
+      status: "rascunho",
+      subtotalCentavos: 5000,
+      totalCentavos: 5000,
+    });
+    const calculation = await calculationsRepository.create(buildCalculation());
+
+    const user = userEvent.setup();
+    render(<QuoteFormPage quote={orcamentoExistente} initialCalculation={calculation} />);
+
+    // O item que já existia no orçamento continua lá...
+    expect(await screen.findByDisplayValue("Chaveiro coração")).toBeInTheDocument();
+    // ...e o item do cálculo entra como um item A MAIS, no final.
+    expect(await screen.findByDisplayValue("Chaveiro personalizado")).toBeInTheDocument();
+    expect(screen.getAllByLabelText("Descrição")).toHaveLength(2);
+
+    await user.click(screen.getByRole("button", { name: "Salvar orçamento" }));
+    await waitFor(() => expect(pushMock).toHaveBeenCalled());
+
+    const atualizado = await quotesRepository.getById(orcamentoExistente.id);
+    expect(atualizado?.itens).toHaveLength(2);
+    expect(atualizado?.itens[0].descricao).toBe("Chaveiro coração");
+    expect(atualizado?.itens[1].descricao).toBe("Chaveiro personalizado");
+    expect(atualizado?.itens[1].totalCentavos).toBe(99800); // 20 × R$49,90
+    expect(atualizado?.subtotalCentavos).toBe(5000 + 99800);
+  }, 15000);
 });
